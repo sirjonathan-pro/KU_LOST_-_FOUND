@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Items | KU Lost & Found</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header>
+    <h1>KUJ Lost & Found</h1>
+  <img src ="kuj.png"
+        alt="kuj.png"
+        width="50">
+    <p>Kampala University - Jinja Campus</p>
+
+    <nav>
+        <a href="inde.html">Home</a>
+        <a href="report_lost.html">Report Lost</a>
+        <a href="report_found.html">Report Found</a>
+        <a href="search.html">Search Items</a>
+        <a href="login.html">Admin Login</a>
+    </nav>
+</header>
+
+<main class="form-container">
+
+    <h2>Search for Lost and Found Items</h2>
+
+    <p>Search for items reported at the university.</p>
+
+    <form id="searchForm">
+
+        <label for="searchTerm">Item Name</label>
+        <input
+            type="text"
+            id="searchTerm"
+            placeholder="Enter item name"
+        >
+
+        <label for="searchCategory">Category</label>
+        <select id="searchCategory">
+            <option value="">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Documents">Documents</option>
+            <option value="Books and Stationery">Books and Stationery</option>
+            <option value="Personal Belongings">Personal Belongings</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label for="searchType">Report Type</label>
+        <select id="searchType">
+            <option value="">All Items</option>
+            <option value="Lost">Lost Items</option>
+            <option value="Found">Found Items</option>
+        </select>
+
+        <button type="submit">Search Items</button>
+
+    </form>
+
+    <div id="searchResults">
+        <h3>Search Results</h3>
+        <p>Enter your search details to find reported items.</p>
+    </div>
+
+</main>
+
+<footer>
+    <p>&copy; 2026 KU Lost & Found Management System</p>
+    <p>Kampala University - Jinja Campus</p>
+  <P><strong>Ṣ̌ÏŘ J̣̌ØÑÄŤĤÂŇ PŘËŜĚṄŤŜ ŸÖÛṚ ÏMMÊÐÎÃŦĚ ĤĔŁPÍṄĞ ŤØØĽ.</strong></P>
+</footer>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

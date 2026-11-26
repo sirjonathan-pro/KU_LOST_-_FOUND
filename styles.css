@@ -1,0 +1,319 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f7f5;
+    color: #26352a;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    background: darkgreen;
+    color: white;
+    text-align: center;
+    padding: 30px 15px;
+}
+
+header h1 {
+    font-size: 30px;
+    margin-bottom: 5px;
+}
+
+/* Navigation */
+nav {
+    background: #174d2b;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 20px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    color: #f5d76e;
+}
+
+/* Welcome section */
+.welcome {
+    text-align: center;
+    padding: 55px 20px;
+    background: white;
+}
+
+.welcome h2 {
+    color: darkgreen;
+    font-size: 27px;
+    margin-bottom: 15px;
+}
+
+.welcome p {
+    max-width: 650px;
+    margin: auto;
+}
+
+/* Action cards */
+.actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 35px 5%;
+}
+
+.action-card {
+    background: white;
+    padding: 25px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+.action-card h3 {
+    color: darkgreen;
+    margin-bottom: 10px;
+}
+
+.action-card button {
+    background: darkgreen;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin-top: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.action-card button:hover {
+    background: #228b45;
+}
+
+/* Footer */
+footer {
+    background: #174d2b;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: 25px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 24px;
+    }
+
+    nav {
+        gap: 12px;
+    }
+
+    .welcome h2 {
+        font-size: 22px;
+    }
+}
+
+/* Reporting form */
+
+.form-container {
+    max-width: 600px;
+    margin: 35px auto;
+    padding: 25px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+.form-container h2 {
+    color: darkgreen;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.form-container p {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+form label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+form input,
+form select,
+form textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 7px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+}
+
+form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+form button {
+    width: 100%;
+    background: darkgreen;
+    color: white;
+    border: none;
+    padding: 14px;
+    margin-top: 22px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background: #228b45;
+}
+
+#formResult {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.dashboard-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 30px auto;
+}
+
+.dashboard-container h2 {
+    margin-bottom: 10px;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 25px 0;
+}
+
+.dashboard-card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-top: 4px solid darkgreen;
+}
+
+.dashboard-card h3 {
+    color: darkgreen;
+    margin-bottom: 12px;
+}
+
+.dashboard-card p {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.report-management {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 25px;
+    overflow: hidden;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: darkgreen;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background: #f2f7f2;
+}
+
+.login-container {
+    min-height: 65vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 15px;
+}
+
+.login-box {
+    background: white;
+    width: 100%;
+    max-width: 420px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+}
+
+.login-box h2 {
+    color: darkgreen;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.login-box > p {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-box label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 7px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    background: darkgreen;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    color: darkgreen;
+}

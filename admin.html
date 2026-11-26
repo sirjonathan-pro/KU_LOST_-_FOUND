@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | KU Lost & Found</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header>
+    <h1>KUJ Lost & Found</h1>
+  <img src ="kuj.png"
+        alt="kuj.png"
+        width="50">
+    <p>Administrator Dashboard</p>
+
+    <nav>
+        <a href="inde.html">Home</a>
+        <a href="search.html">Search Items</a>
+        <a href="report_lost.html">Report Lost</a>
+        <a href="report_found.html">Report Found</a>
+        <a href="admin.html">Dashboard</a>
+    </nav>
+</header>
+
+<main class="dashboard-container">
+
+    <h2>Admin Dashboard</h2>
+    <p>Manage lost and found reports at Kampala University - Jinja Campus.</p>
+
+    <section class="dashboard-cards">
+
+        <div class="dashboard-card">
+            <h3>Total Reports</h3>
+            <p id="totalReports">0</p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Lost Items</h3>
+            <p id="lostReports">0</p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Found Items</h3>
+            <p id="foundReports">0</p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Claimed Items</h3>
+            <p id="claimedReports">0</p>
+        </div>
+
+    </section>
+
+    <section class="report-management">
+
+        <h2>Manage Item Reports</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Category</th>
+                        <th>Report Type</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="reportsTable">
+                    <tr>
+                        <td colspan="6">
+                            No reports available yet.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+</main>
+
+<footer>
+    <p>&copy; 2026 KU Lost & Found Management System</p>
+    <p>Kampala University - Jinja Campus</p>
+  <P><strong>Ṣ̌ÏŘ J̣̌ØÑÄŤĤÂŇ PŘËŜĚṄŤŜ ŸÖÛṚ ÏMMÊÐÎÃŦĚ ĤĔŁPÍṄĞ ŤØØĽ.</strong></P>
+</footer>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

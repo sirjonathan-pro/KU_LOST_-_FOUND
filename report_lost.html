@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Lost Item | KU Lost and Found</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>KUJ Lost & Found</h1>
+      <img src ="kuj.png"
+        alt="kuj.png"
+        width="50">
+        <p>Kampala University - Jinja Campus</p>
+    </header>
+
+    <nav>
+        <a href="inde.html">Home</a>
+        <a href="report-lost.html">Report Lost</a>
+    </nav>
+
+    <main class="form-container">
+
+        <h2>Report a Lost Item</h2>
+        <p>Provide accurate information about your missing property we are here to help you recover your property.</p>
+
+        <form id="lostForm">
+
+            <label for="itemName">Item Name</label>
+            <input type="text" id="itemName"
+                placeholder="e.g. Student Identity Card" required>
+
+            <label for="category">Item Category</label>
+            <select id="category" required>
+                <option value="">Select category</option>
+                <option>Electronics</option>
+                <option>Documents</option>
+                <option>Books and Stationery</option>
+                <option>Personal Belongings</option>
+                <option>Other</option>
+            </select>
+
+            <label for="description">Item Description</label>
+            <textarea id="description"
+                placeholder="Describe the item..." required></textarea>
+
+            <label for="dateLost">Date Lost</label>
+            <input type="date" id="dateLost" required>
+
+            <label for="location">Last Known Location</label>
+            <input type="text" id="location"
+                placeholder="e.g. Computer Laboratory" required>
+
+            <label for="email">Contact Email</label>
+            <input type="email" id="email"
+                placeholder="Enter your email address" required>
+
+            <button type="submit">Submit Lost Item Report</button>
+
+            <p id="formResult"></p>
+
+        </form>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2026 KU Lost and Found Management System.</p>
+        <p>Kampala University - Jinja Campus</p>
+      <P><strong>Ṣ̌ÏŘ J̣̌ØÑÄŤĤÂŇ PŘËŜĚṄŤŜ ŸÖÛṚ ÏMMÊÐÎÃŦĚ ĤĔŁPÍṄĞ ŤØØĽ.</strong></P>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+
+</body>
+</html>
