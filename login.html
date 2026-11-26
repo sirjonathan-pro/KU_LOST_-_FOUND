@@ -12,9 +12,7 @@
 
 <header>
     <h1>KUJ Lost & Found</h1>
-  <img src ="kuj.png"
-        alt="kuj.png"
-        width="50">
+    <img src="kuj.png" alt="KUJ Logo" width="50">
     <p>Kampala University - Jinja Campus</p>
 
     <nav>
@@ -22,10 +20,6 @@
         <a href="search.html">Search Items</a>
         <a href="login.html">Admin Login</a>
     </nav>
-
-  <button id="logoutBtn" type="button">
-    Logout
-  </button>
 </header>
 
 <main class="login-container">
@@ -37,29 +31,32 @@
         <p>Sign in to access the management dashboard.</p>
 
         <form id="loginForm">
-    <label>Email Address</label>
-    <input type="email" id="adminEmail" required>
 
-    <label>Password</label>
-    <input type="password" id="adminPassword" required>
+            <label>Email Address</label>
+            <input type="email" id="adminEmail" required>
 
-    <button type="button" onclick="alert('Login button works')">
-        Test Login Button
-    </button>
+            <label>Password</label>
+            <input type="password" id="adminPassword" required>
+
+            <button type="submit">
+                Login
+            </button>
+
         </form>
+
+        <p id="loginResult"></p>
 
         <a href="index.html" class="back-link">
             Back to Home
         </a>
 
     </div>
-<p id="adminMessage"></p>
+
 </main>
 
 <footer>
     <p>&copy; 2026 KU Lost & Found Management System</p>
     <p>Kampala University - Jinja Campus</p>
-  <P><strong>Ṣ̌ÏŘ J̣̌ØÑÄŤĤÂŇ PŘËŜĚṄŤŜ ŸÖÛṚ ÏMMÊÐÎÃŦĚ ĤĔŁPÍṄĞ ŤØØĽ.</strong></P>
 </footer>
 
 <script type="module" src="script.js"></script>
