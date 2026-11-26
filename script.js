@@ -1,4 +1,6 @@
+
 console.log("KUJ Lost and Found script loaded");
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -9,10 +11,13 @@ import {
 
 import {
     doc,
-    getDoc
+    getDoc,
+    collection,
+    addDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// Check whether a user is an authorized administrator
+// CHECK ADMINISTRATOR
 async function checkAdmin(user) {
     const adminRef = doc(db, "admins", user.uid);
     const adminSnapshot = await getDoc(adminRef);
@@ -98,5 +103,59 @@ if (logoutBtn) {
             console.error(error);
             alert("Logout failed. Please try again.");
         }
+    });
+}
+
+// REPORT LOST ITEM
+const lostForm = document.getElementById("lostForm");
+
+if (lostForm) {
+
+    lostForm.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const result = document.getElementById("formResult");
+        const submitButton = lostForm.querySelector('button[type="submit"]');
+
+        const itemName = document.getElementById("itemName").value.trim();
+        const category = document.getElementById("category").value;
+        const description = document.getElementById("description").value.trim();
+        const dateLost = document.getElementById("dateLost").value;
+        const location = document.getElementById("location").value.trim();
+        const email = document.getElementById("email").value.trim();
+
+        result.textContent = "Sending your report...";
+        submitButton.disabled = true;
+
+        try {
+
+            await addDoc(collection(db, "lostItems"), {
+                itemName: itemName,
+                category: category,
+                description: description,
+                dateLost: dateLost,
+                location: location,
+                email: email,
+                status: "Pending",
+                createdAt: serverTimestamp()
+            });
+
+            result.textContent =
+                "Lost item reported successfully!";
+
+            lostForm.reset();
+
+        } catch (error) {
+
+            console.error("Lost item submission error:", error);
+
+            result.textContent =
+                "Report failed. Please try again.";
+
+        } finally {
+            submitButton.disabled = false;
+        }
+
     });
 }
