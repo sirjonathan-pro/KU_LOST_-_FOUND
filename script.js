@@ -1,4 +1,4 @@
-console.log("KU Lost and Found script loaded");
+console.log("KUJ Lost and Found script loaded");
 import { auth, db } from "./firebase.js";
 
 import {
