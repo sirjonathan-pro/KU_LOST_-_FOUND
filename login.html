@@ -37,27 +37,15 @@
         <p>Sign in to access the management dashboard.</p>
 
         <form id="loginForm">
+    <label>Email Address</label>
+    <input type="email" id="adminEmail" required>
 
-            <label for="adminEmail">Email Address</label>
-            <input
-                type="email"
-                id="adminEmail"
-                placeholder="Enter admin email"
-                required
-            >
+    <label>Password</label>
+    <input type="password" id="adminPassword" required>
 
-            <label for="adminPassword">Password</label>
-            <input
-                type="password"
-                id="adminPassword"
-                placeholder="Enter your password"
-                required
-            >
-
-            <button type="submit">Login</button>
-
-            <p id="loginResult"></p>
-
+    <button type="button" onclick="alert('Login button works')">
+        Test Login Button
+    </button>
         </form>
 
         <a href="index.html" class="back-link">
