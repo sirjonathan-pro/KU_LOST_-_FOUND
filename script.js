@@ -140,13 +140,19 @@ async function loadAdminReports() {
 
     try {
 
-        const [lostSnapshot, foundSnapshot] =
-            await Promise.all([
+        const [lostSnapshot, foundSnapshot, contactsSnapshot] =
+    await Promise.all([
+        getDocs(collection(db, "lost_items")),
+        getDocs(collection(db, "found_items")),
+        getDocs(collection(db, "private_contacts"))
+    ]);
 
-                getDocs(collection(db, "lost_items")),
-                getDocs(collection(db, "found_items"))
+const contacts = {};
 
-            ]);
+contactsSnapshot.forEach(function(contact) {
+    contacts[contact.id] =
+        contact.data().email || "Not provided";
+});
 
         const reports = [];
 
