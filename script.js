@@ -1,5 +1,6 @@
 
 console.log("KUJ Lost and Found system loaded");
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -12,23 +13,26 @@ import {
     doc,
     getDoc,
     collection,
-    addDoc,
     getDocs,
     writeBatch,
-    serverTimestamp
+    serverTimestamp,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
 
 // =================================
 // ADMIN AUTHORIZATION
 // =================================
 
 async function checkAdmin(user) {
+
     const adminRef = doc(db, "admins", user.uid);
     const snapshot = await getDoc(adminRef);
 
     return snapshot.exists() &&
            snapshot.data().role === "admin";
 }
+
 
 // =================================
 // ADMIN LOGIN
@@ -37,7 +41,9 @@ async function checkAdmin(user) {
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
+
     loginForm.addEventListener("submit", async function(event) {
+
         event.preventDefault();
 
         const email = document.getElementById("adminEmail").value.trim();
@@ -47,26 +53,38 @@ if (loginForm) {
         result.textContent = "Signing in...";
 
         try {
+
             const credential =
                 await signInWithEmailAndPassword(auth, email, password);
 
-            if (await checkAdmin(credential.user)) {
+            const authorized = await checkAdmin(credential.user);
+
+            if (authorized) {
+
                 result.textContent = "Login successful!";
                 window.location.href = "admin.html";
+
             } else {
+
                 await signOut(auth);
-                result.textContent = "Access denied. Not an administrator.";
+
+                result.textContent =
+                    "Access denied. Not an administrator.";
             }
 
         } catch (error) {
+
             console.error("Login error:", error);
-            result.textContent = "Login failed. Check your details.";
+
+            result.textContent =
+                "Login failed: " + (error.message || "Check your details.");
         }
     });
 }
 
+
 // =================================
-// PROTECT AND LOAD ADMIN DASHBOARD
+// PROTECT ADMIN DASHBOARD
 // =================================
 
 const adminMessage = document.getElementById("adminMessage");
@@ -76,6 +94,7 @@ if (adminMessage) {
     onAuthStateChanged(auth, async function(user) {
 
         if (!user) {
+
             window.location.href = "login.html";
             return;
         }
@@ -85,6 +104,7 @@ if (adminMessage) {
             const authorized = await checkAdmin(user);
 
             if (!authorized) {
+
                 await signOut(auth);
                 window.location.href = "login.html";
                 return;
@@ -100,13 +120,14 @@ if (adminMessage) {
             console.error("Dashboard error:", error);
 
             adminMessage.textContent =
-                "Unable to load dashboard. Check permissions.";
+                "Unable to load dashboard: " + error.message;
         }
     });
 }
 
+
 // =================================
-// LOAD REPORTS FROM FIRESTORE
+// LOAD ADMIN REPORTS
 // =================================
 
 async function loadAdminReports() {
@@ -119,36 +140,38 @@ async function loadAdminReports() {
 
     try {
 
-        const [lostSnapshot, foundSnapshot, contactsSnapshot] =
+        const [lostSnapshot, foundSnapshot] =
             await Promise.all([
+
                 getDocs(collection(db, "lost_items")),
-                getDocs(collection(db, "found_items")),
-                getDocs(collection(db, "private_contacts"))
+                getDocs(collection(db, "found_items"))
+
             ]);
-
-        const contacts = {};
-
-        contactsSnapshot.forEach(function(contact) {
-            contacts[contact.id] = contact.data().email || "Not provided";
-        });
 
         const reports = [];
 
         lostSnapshot.forEach(function(item) {
+
             reports.push({
                 id: item.id,
                 ...item.data(),
                 type: "Lost"
             });
+
         });
 
         foundSnapshot.forEach(function(item) {
+
             reports.push({
                 id: item.id,
                 ...item.data(),
                 type: "Found"
             });
+
         });
+
+
+        // Dashboard statistics
 
         document.getElementById("totalReports").textContent =
             reports.length;
@@ -164,6 +187,7 @@ async function loadAdminReports() {
                 ["Claimed", "Returned", "Recovered"].includes(item.status)
             ).length;
 
+
         table.replaceChildren();
 
         if (reports.length === 0) {
@@ -171,7 +195,7 @@ async function loadAdminReports() {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
 
-            cell.colSpan = 7;
+            cell.colSpan = 6;
             cell.textContent = "No reports available yet.";
 
             row.appendChild(cell);
@@ -180,84 +204,114 @@ async function loadAdminReports() {
             return;
         }
 
+
+        // Display each report
+
         reports.forEach(function(item) {
 
             const row = document.createElement("tr");
 
-            const date = item.dateLost || item.dateFound || "Not provided";
+            const date =
+                item.dateLost || item.dateFound || "Not provided";
 
             const values = [
                 item.itemName,
                 item.category,
                 item.type,
                 date,
-                contacts[item.id] || "Not provided",
                 item.status
             ];
 
             values.forEach(function(value) {
 
                 const cell = document.createElement("td");
+
                 cell.textContent = value || "Not provided";
+
                 row.appendChild(cell);
 
             });
 
+
+            // STATUS DROPDOWN
+
             const actionCell = document.createElement("td");
 
-            // Update status
             const statusSelect = document.createElement("select");
 
-            ["Pending", "Lost", "Found", "Recovered", "Claimed", "Returned"]
-                .forEach(function(status) {
+            [
+                "Lost",
+                "Found",
+                "Recovered",
+                "Claimed",
+                "Returned"
+            ].forEach(function(status) {
 
-                    const option = document.createElement("option");
-                    option.value = status;
-                    option.textContent = status;
+                const option = document.createElement("option");
 
-                    if (item.status === status) {
-                        option.selected = true;
-                    }
+                option.value = status;
+                option.textContent = status;
 
-                    statusSelect.appendChild(option);
-                });
+                if (item.status === status) {
+                    option.selected = true;
+                }
+
+                statusSelect.appendChild(option);
+
+            });
+
+
+            // UPDATE BUTTON
 
             const updateButton = document.createElement("button");
+
             updateButton.textContent = "Update";
+            updateButton.type = "button";
 
             updateButton.addEventListener("click", async function() {
+
+                updateButton.disabled = true;
 
                 try {
 
                     const collectionName =
-                        item.type === "Lost" ? "lost_items" : "found_items";
+                        item.type === "Lost"
+                        ? "lost_items"
+                        : "found_items";
 
                     await updateDoc(
                         doc(db, collectionName, item.id),
-                        { status: statusSelect.value }
+                        {
+                            status: statusSelect.value
+                        }
                     );
 
                     alert("Report status updated successfully!");
 
                     await loadAdminReports();
 
+                } catch (error) {
 
-                    } 
-            } catch (error) {
+                    console.error("Update error:", error);
 
-    console.error("Update error:", error);
+                    alert(
+                        "Update failed!\n" +
+                        "Code: " + (error.code || "Unknown") +
+                        "\nMessage: " + error.message
+                    );
 
-    alert(
-        "Update failed!\n" +
-        "Error: " + error.code +
-        "\nDetails: " + error.message
-    );
-        }
-        
+                    updateButton.disabled = false;
+                }
 
-            // Delete report
+            });
+
+
+            // DELETE BUTTON
+
             const deleteButton = document.createElement("button");
+
             deleteButton.textContent = "Delete";
+            deleteButton.type = "button";
 
             deleteButton.addEventListener("click", async function() {
 
@@ -265,15 +319,24 @@ async function loadAdminReports() {
                     return;
                 }
 
+                deleteButton.disabled = true;
+
                 try {
 
                     const collectionName =
-                        item.type === "Lost" ? "lost_items" : "found_items";
+                        item.type === "Lost"
+                        ? "lost_items"
+                        : "found_items";
 
                     const batch = writeBatch(db);
 
-                    batch.delete(doc(db, collectionName, item.id));
-                    batch.delete(doc(db, "private_contacts", item.id));
+                    batch.delete(
+                        doc(db, collectionName, item.id)
+                    );
+
+                    batch.delete(
+                        doc(db, "private_contacts", item.id)
+                    );
 
                     await batch.commit();
 
@@ -284,9 +347,17 @@ async function loadAdminReports() {
                 } catch (error) {
 
                     console.error("Delete error:", error);
-                    alert("Could not delete report: " + error.code);
+
+                    alert(
+                        "Delete failed: " +
+                        (error.message || error.code)
+                    );
+
+                    deleteButton.disabled = false;
                 }
+
             });
+
 
             actionCell.append(
                 statusSelect,
@@ -295,6 +366,7 @@ async function loadAdminReports() {
             );
 
             row.appendChild(actionCell);
+
             table.appendChild(row);
 
         });
@@ -304,7 +376,8 @@ async function loadAdminReports() {
         console.error("Loading reports error:", error);
 
         table.textContent =
-            "Failed to load reports: " + error.code;
+            "Failed to load reports: " +
+            (error.message || error.code);
     }
 }
 
@@ -316,16 +389,24 @@ async function loadAdminReports() {
 const logoutBtn = document.getElementById("logoutBtn");
 
 if (logoutBtn) {
+
     logoutBtn.addEventListener("click", async function() {
+
         try {
+
             await signOut(auth);
+
             window.location.href = "login.html";
+
         } catch (error) {
+
             console.error("Logout error:", error);
+
             alert("Logout failed. Please try again.");
         }
     });
 }
+
 
 // =================================
 // GENERAL ITEM REPORTING FUNCTION
@@ -342,7 +423,9 @@ async function submitItemReport(config) {
         event.preventDefault();
 
         const result = document.getElementById(config.resultId);
-        const button = form.querySelector('button[type="submit"]');
+
+        const button =
+            form.querySelector('button[type="submit"]');
 
         const itemName =
             document.getElementById(config.nameId).value.trim();
@@ -363,17 +446,20 @@ async function submitItemReport(config) {
             document.getElementById(config.emailId).value.trim();
 
         result.textContent = "Submitting report...";
+
         button.disabled = true;
 
         try {
 
             const batch = writeBatch(db);
 
-            // Create a new report document
-            const reportRef = doc(collection(db, config.collectionName));
+            const reportRef =
+                doc(collection(db, config.collectionName));
 
-            // Public report: no contact email is stored here
+            // Public report
+
             batch.set(reportRef, {
+
                 itemName: itemName,
                 category: category,
                 description: description,
@@ -381,9 +467,11 @@ async function submitItemReport(config) {
                 location: location,
                 status: config.status,
                 createdAt: serverTimestamp()
+
             });
 
-            // Private contact information
+            // Private contact details
+
             const contactRef = doc(
                 db,
                 "private_contacts",
@@ -391,68 +479,89 @@ async function submitItemReport(config) {
             );
 
             batch.set(contactRef, {
+
                 email: email,
                 type: config.status,
                 createdAt: serverTimestamp()
+
             });
 
             await batch.commit();
 
-            result.textContent =
-                config.successMessage;
+            result.textContent = config.successMessage;
 
             form.reset();
 
         } catch (error) {
 
-            console.error("Item reporting error:", error);
+            console.error("Reporting error:", error);
 
             result.textContent =
-                "Reporting failed: " + error.code;
+                "Reporting failed: " +
+                (error.message || error.code);
 
         } finally {
+
             button.disabled = false;
         }
+
     });
 }
+
 
 // =================================
 // REPORT LOST ITEM
 // =================================
 
 submitItemReport({
+
     formId: "lostForm",
     resultId: "formResult",
+
     nameId: "itemName",
     categoryId: "category",
     descriptionId: "description",
+
     dateId: "dateLost",
     locationId: "location",
     emailId: "email",
+
     dateField: "dateLost",
     collectionName: "lost_items",
+
     status: "Lost",
+
     successMessage: "Lost item reported successfully!"
+
 });
+
 
 // =================================
 // REPORT FOUND ITEM
 // =================================
 
 submitItemReport({
+
     formId: "foundForm",
     resultId: "foundResult",
+
     nameId: "foundItemName",
     categoryId: "foundCategory",
     descriptionId: "foundDescription",
+
     dateId: "dateFound",
     locationId: "foundLocation",
     emailId: "finderEmail",
+
     dateField: "dateFound",
     collectionName: "found_items",
+
     status: "Found",
+
     successMessage: "Found item reported successfully!"
+
 });
+
 
 // =================================
 // SEARCH LOST AND FOUND ITEMS
@@ -466,47 +575,59 @@ if (searchForm) {
 
         event.preventDefault();
 
-        const searchTerm = document.getElementById("searchTerm")
+        const searchTerm =
+            document.getElementById("searchTerm")
             .value.trim().toLowerCase();
 
-        const searchCategory = document.getElementById("searchCategory")
-            .value;
+        const searchCategory =
+            document.getElementById("searchCategory").value;
 
-        const searchType = document.getElementById("searchType")
-            .value;
+        const searchType =
+            document.getElementById("searchType").value;
 
-        const searchResults = document.getElementById("searchResults");
+        const searchResults =
+            document.getElementById("searchResults");
 
         searchResults.textContent = "Searching...";
 
         try {
 
-            const [lostSnapshot, foundSnapshot] = await Promise.all([
-                getDocs(collection(db, "lost_items")),
-                getDocs(collection(db, "found_items"))
-            ]);
+            const [lostSnapshot, foundSnapshot] =
+                await Promise.all([
+
+                    getDocs(collection(db, "lost_items")),
+                    getDocs(collection(db, "found_items"))
+
+                ]);
 
             const reports = [];
 
             lostSnapshot.forEach(function(item) {
+
                 reports.push({
                     ...item.data(),
                     reportType: "Lost"
                 });
+
             });
 
             foundSnapshot.forEach(function(item) {
+
                 reports.push({
                     ...item.data(),
                     reportType: "Found"
                 });
+
             });
+
 
             const matches = reports.filter(function(item) {
 
                 const nameMatch =
                     !searchTerm ||
-                    item.itemName.toLowerCase().includes(searchTerm);
+                    String(item.itemName || "")
+                    .toLowerCase()
+                    .includes(searchTerm);
 
                 const categoryMatch =
                     !searchCategory ||
@@ -517,41 +638,58 @@ if (searchForm) {
                     item.reportType === searchType;
 
                 return nameMatch && categoryMatch && typeMatch;
+
             });
+
 
             searchResults.replaceChildren();
 
             const heading = document.createElement("h3");
+
             heading.textContent = "Search Results";
+
             searchResults.appendChild(heading);
 
+
             if (matches.length === 0) {
+
                 searchResults.append("No matching items found.");
+
                 return;
             }
+
 
             matches.forEach(function(item) {
 
                 const card = document.createElement("div");
+
                 card.className = "search-result";
 
                 const details = [
+
                     ["Item Name", item.itemName],
                     ["Report Type", item.reportType],
                     ["Category", item.category],
                     ["Description", item.description],
                     ["Location", item.location],
                     ["Status", item.status]
+
                 ];
 
                 details.forEach(function(detail) {
+
                     const paragraph = document.createElement("p");
+
                     paragraph.textContent =
-                        detail[0] + ": " + (detail[1] || "Not provided");
+                        detail[0] + ": " +
+                        (detail[1] || "Not provided");
+
                     card.appendChild(paragraph);
+
                 });
 
                 searchResults.appendChild(card);
+
             });
 
         } catch (error) {
@@ -559,10 +697,9 @@ if (searchForm) {
             console.error("Search error:", error);
 
             searchResults.textContent =
-                "Search failed: " + (error.code || error.message);
+                "Search failed: " +
+                (error.message || error.code);
         }
+
     });
 }
-
-
-                
