@@ -242,18 +242,18 @@ async function loadAdminReports() {
                     await loadAdminReports();
 
 
-                    } } catch (error) {
+                    } 
+            } catch (error) {
 
-    console.error("FULL UPDATE ERROR:", error);
+    console.error("Update error:", error);
 
     alert(
         "Update failed!\n" +
-        "Message: " + (error?.message || String(error)) +
-        "\nCode: " + (error?.code || "No error code")
+        "Error: " + error.code +
+        "\nDetails: " + error.message
     );
         }
-            
-            });
+        
 
             // Delete report
             const deleteButton = document.createElement("button");
