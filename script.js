@@ -241,11 +241,17 @@ async function loadAdminReports() {
 
                     await loadAdminReports();
 
-                } catch (error) {
 
-                    console.error("Update error:", error);
-                    alert("Could not update report: " + error.code);
-                }
+                    } catch (error) {
+
+    console.error("Update error:", error);
+
+    alert(
+        "Update failed!\n" +
+        "Error: " + error.code +
+        "\nDetails: " + error.message
+    );
+            }
             });
 
             // Delete report
