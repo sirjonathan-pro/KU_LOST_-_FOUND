@@ -1,5 +1,5 @@
 
-console.log("KUJ Lost and Found script loaded");
+console.log("KUJ Lost and Found system loaded");
 
 import { auth, db } from "./firebase.js";
 
@@ -14,19 +14,27 @@ import {
     getDoc,
     collection,
     addDoc,
+    getDocs,
+    writeBatch,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// CHECK ADMINISTRATOR
+// =================================
+// ADMIN AUTHORIZATION
+// =================================
+
 async function checkAdmin(user) {
     const adminRef = doc(db, "admins", user.uid);
-    const adminSnapshot = await getDoc(adminRef);
+    const snapshot = await getDoc(adminRef);
 
-    return adminSnapshot.exists() &&
-           adminSnapshot.data().role === "admin";
+    return snapshot.exists() &&
+           snapshot.data().role === "admin";
 }
 
+// =================================
 // ADMIN LOGIN
+// =================================
+
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
@@ -40,12 +48,10 @@ if (loginForm) {
         result.textContent = "Signing in...";
 
         try {
-            const userCredential =
+            const credential =
                 await signInWithEmailAndPassword(auth, email, password);
 
-            const authorized = await checkAdmin(userCredential.user);
-
-            if (authorized) {
+            if (await checkAdmin(credential.user)) {
                 result.textContent = "Login successful!";
                 window.location.href = "admin.html";
             } else {
@@ -54,13 +60,16 @@ if (loginForm) {
             }
 
         } catch (error) {
-            console.error(error);
-            result.textContent = "Login failed. Check your email and password.";
+            console.error("Login error:", error);
+            result.textContent = "Login failed. Check your details.";
         }
     });
 }
 
+// =================================
 // PROTECT ADMIN DASHBOARD
+// =================================
+
 const adminMessage = document.getElementById("adminMessage");
 
 if (adminMessage) {
@@ -82,16 +91,17 @@ if (adminMessage) {
             }
 
         } catch (error) {
-            console.error(error);
+            console.error("Admin verification error:", error);
             adminMessage.textContent =
                 "Unable to verify administrator access.";
-            await signOut(auth);
-            window.location.href = "login.html";
         }
     });
 }
 
+// =================================
 // ADMIN LOGOUT
+// =================================
+
 const logoutBtn = document.getElementById("logoutBtn");
 
 if (logoutBtn) {
@@ -100,62 +110,244 @@ if (logoutBtn) {
             await signOut(auth);
             window.location.href = "login.html";
         } catch (error) {
-            console.error(error);
+            console.error("Logout error:", error);
             alert("Logout failed. Please try again.");
         }
     });
 }
 
-// REPORT LOST ITEM
-const lostForm = document.getElementById("lostForm");
+// =================================
+// GENERAL ITEM REPORTING FUNCTION
+// =================================
 
-if (lostForm) {
+async function submitItemReport(config) {
 
-    lostForm.addEventListener("submit", async function(event) {
+    const form = document.getElementById(config.formId);
+
+    if (!form) return;
+
+    form.addEventListener("submit", async function(event) {
 
         event.preventDefault();
 
-        const result = document.getElementById("formResult");
-        const submitButton = lostForm.querySelector('button[type="submit"]');
+        const result = document.getElementById(config.resultId);
+        const button = form.querySelector('button[type="submit"]');
 
-        const itemName = document.getElementById("itemName").value.trim();
-        const category = document.getElementById("category").value;
-        const description = document.getElementById("description").value.trim();
-        const dateLost = document.getElementById("dateLost").value;
-        const location = document.getElementById("location").value.trim();
-        const email = document.getElementById("email").value.trim();
+        const itemName =
+            document.getElementById(config.nameId).value.trim();
 
-        result.textContent = "Sending your report...";
-        submitButton.disabled = true;
+        const category =
+            document.getElementById(config.categoryId).value;
+
+        const description =
+            document.getElementById(config.descriptionId).value.trim();
+
+        const date =
+            document.getElementById(config.dateId).value;
+
+        const location =
+            document.getElementById(config.locationId).value.trim();
+
+        const email =
+            document.getElementById(config.emailId).value.trim();
+
+        result.textContent = "Submitting report...";
+        button.disabled = true;
 
         try {
 
-            await addDoc(collection(db, "lostItems"), {
+            const batch = writeBatch(db);
+
+            // Create a new report document
+            const reportRef = doc(collection(db, config.collectionName));
+
+            // Public report: no contact email is stored here
+            batch.set(reportRef, {
                 itemName: itemName,
                 category: category,
                 description: description,
-                dateLost: dateLost,
+                [config.dateField]: date,
                 location: location,
-                email: email,
-                status: "Pending",
+                status: config.status,
                 createdAt: serverTimestamp()
             });
 
-            result.textContent =
-                "Lost item reported successfully!";
+            // Private contact information
+            const contactRef = doc(
+                db,
+                "private_contacts",
+                reportRef.id
+            );
 
-            lostForm.reset();
+            batch.set(contactRef, {
+                email: email,
+                type: config.status,
+                createdAt: serverTimestamp()
+            });
+
+            await batch.commit();
+
+            result.textContent =
+                config.successMessage;
+
+            form.reset();
 
         } catch (error) {
 
-            console.error("Lost item submission error:", error);
+            console.error("Item reporting error:", error);
 
             result.textContent =
-                "Report failed. Please try again.";
+                "Reporting failed: " + error.code;
 
         } finally {
-            submitButton.disabled = false;
+            button.disabled = false;
+        }
+    });
+}
+
+// =================================
+// REPORT LOST ITEM
+// =================================
+
+submitItemReport({
+    formId: "lostForm",
+    resultId: "formResult",
+    nameId: "itemName",
+    categoryId: "category",
+    descriptionId: "description",
+    dateId: "dateLost",
+    locationId: "location",
+    emailId: "email",
+    dateField: "dateLost",
+    collectionName: "lost_items",
+    status: "Lost",
+    successMessage: "Lost item reported successfully!"
+});
+
+// =================================
+// REPORT FOUND ITEM
+// =================================
+
+submitItemReport({
+    formId: "foundForm",
+    resultId: "foundResult",
+    nameId: "foundItemName",
+    categoryId: "foundCategory",
+    descriptionId: "foundDescription",
+    dateId: "dateFound",
+    locationId: "foundLocation",
+    emailId: "finderEmail",
+    dateField: "dateFound",
+    collectionName: "found_items",
+    status: "Found",
+    successMessage: "Found item reported successfully!"
+});
+
+// =================================
+// SEARCH LOST AND FOUND ITEMS
+// =================================
+
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+
+if (searchInput && searchResults) {
+
+    searchInput.addEventListener("input", async function() {
+
+        const searchTerm = searchInput.value.trim().toLowerCase();
+
+        searchResults.replaceChildren();
+
+        if (!searchTerm) {
+            searchResults.textContent = "Enter an item name to search.";
+            return;
         }
 
+        searchResults.textContent = "Searching...";
+
+        try {
+
+            const [lostSnapshot, foundSnapshot] = await Promise.all([
+                getDocs(collection(db, "lost_items")),
+                getDocs(collection(db, "found_items"))
+            ]);
+
+            const reports = [];
+
+            lostSnapshot.forEach(function(item) {
+                reports.push({
+                    ...item.data(),
+                    reportType: "Lost"
+                });
+            });
+
+            foundSnapshot.forEach(function(item) {
+                reports.push({
+                    ...item.data(),
+                    reportType: "Found"
+                });
+            });
+
+            const matches = reports.filter(function(item) {
+
+                const searchableText = [
+                    item.itemName,
+                    item.category,
+                    item.description,
+                    item.location,
+                    item.reportType
+                ].join(" ").toLowerCase();
+
+                return searchableText.includes(searchTerm);
+            });
+
+            searchResults.replaceChildren();
+
+            if (matches.length === 0) {
+                searchResults.textContent = "No matching items found.";
+                return;
+            }
+
+            matches.forEach(function(item) {
+
+                const card = document.createElement("div");
+                card.className = "search-result";
+
+                const heading = document.createElement("h3");
+                heading.textContent = item.itemName;
+
+                const type = document.createElement("p");
+                type.textContent = "Report type: " + item.reportType;
+
+                const category = document.createElement("p");
+                category.textContent = "Category: " + item.category;
+
+                const description = document.createElement("p");
+                description.textContent = "Description: " + item.description;
+
+                const location = document.createElement("p");
+                location.textContent = "Location: " + item.location;
+
+                const status = document.createElement("p");
+                status.textContent = "Status: " + item.status;
+
+                card.append(
+                    heading,
+                    type,
+                    category,
+                    description,
+                    location,
+                    status
+                );
+
+                searchResults.appendChild(card);
+            });
+
+        } catch (error) {
+
+            console.error("Search error:", error);
+            searchResults.textContent =
+                "Search failed. Please try again.";
+        }
     });
 }
