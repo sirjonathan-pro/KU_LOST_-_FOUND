@@ -67,36 +67,241 @@ if (loginForm) {
 }
 
 // =================================
-// PROTECT ADMIN DASHBOARD
+// PROTECT AND LOAD ADMIN DASHBOARD
 // =================================
 
 const adminMessage = document.getElementById("adminMessage");
 
 if (adminMessage) {
+
     onAuthStateChanged(auth, async function(user) {
+
         if (!user) {
             window.location.href = "login.html";
             return;
         }
 
         try {
+
             const authorized = await checkAdmin(user);
 
             if (!authorized) {
                 await signOut(auth);
                 window.location.href = "login.html";
-            } else {
-                adminMessage.textContent =
-                    "Welcome, Administrator. You are signed in.";
+                return;
             }
 
-        } catch (error) {
-            console.error("Admin verification error:", error);
             adminMessage.textContent =
-                "Unable to verify administrator access.";
+                "Welcome, Administrator. You are signed in.";
+
+            await loadAdminReports();
+
+        } catch (error) {
+
+            console.error("Dashboard error:", error);
+
+            adminMessage.textContent =
+                "Unable to load dashboard. Check permissions.";
         }
     });
 }
+
+// =================================
+// LOAD REPORTS FROM FIRESTORE
+// =================================
+
+async function loadAdminReports() {
+
+    const table = document.getElementById("reportsTable");
+
+    if (!table) return;
+
+    table.textContent = "Loading reports...";
+
+    try {
+
+        const [lostSnapshot, foundSnapshot, contactsSnapshot] =
+            await Promise.all([
+                getDocs(collection(db, "lost_items")),
+                getDocs(collection(db, "found_items")),
+                getDocs(collection(db, "private_contacts"))
+            ]);
+
+        const contacts = {};
+
+        contactsSnapshot.forEach(function(contact) {
+            contacts[contact.id] = contact.data().email || "Not provided";
+        });
+
+        const reports = [];
+
+        lostSnapshot.forEach(function(item) {
+            reports.push({
+                id: item.id,
+                ...item.data(),
+                type: "Lost"
+            });
+        });
+
+        foundSnapshot.forEach(function(item) {
+            reports.push({
+                id: item.id,
+                ...item.data(),
+                type: "Found"
+            });
+        });
+
+        document.getElementById("totalReports").textContent =
+            reports.length;
+
+        document.getElementById("lostReports").textContent =
+            lostSnapshot.size;
+
+        document.getElementById("foundReports").textContent =
+            foundSnapshot.size;
+
+        document.getElementById("claimedReports").textContent =
+            reports.filter(item =>
+                ["Claimed", "Returned", "Recovered"].includes(item.status)
+            ).length;
+
+        table.replaceChildren();
+
+        if (reports.length === 0) {
+
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+
+            cell.colSpan = 7;
+            cell.textContent = "No reports available yet.";
+
+            row.appendChild(cell);
+            table.appendChild(row);
+
+            return;
+        }
+
+        reports.forEach(function(item) {
+
+            const row = document.createElement("tr");
+
+            const date = item.dateLost || item.dateFound || "Not provided";
+
+            const values = [
+                item.itemName,
+                item.category,
+                item.type,
+                date,
+                contacts[item.id] || "Not provided",
+                item.status
+            ];
+
+            values.forEach(function(value) {
+
+                const cell = document.createElement("td");
+                cell.textContent = value || "Not provided";
+                row.appendChild(cell);
+
+            });
+
+            const actionCell = document.createElement("td");
+
+            // Update status
+            const statusSelect = document.createElement("select");
+
+            ["Pending", "Lost", "Found", "Recovered", "Claimed", "Returned"]
+                .forEach(function(status) {
+
+                    const option = document.createElement("option");
+                    option.value = status;
+                    option.textContent = status;
+
+                    if (item.status === status) {
+                        option.selected = true;
+                    }
+
+                    statusSelect.appendChild(option);
+                });
+
+            const updateButton = document.createElement("button");
+            updateButton.textContent = "Update";
+
+            updateButton.addEventListener("click", async function() {
+
+                try {
+
+                    const collectionName =
+                        item.type === "Lost" ? "lost_items" : "found_items";
+
+                    await updateDoc(
+                        doc(db, collectionName, item.id),
+                        { status: statusSelect.value }
+                    );
+
+                    alert("Report status updated successfully!");
+
+                    await loadAdminReports();
+
+                } catch (error) {
+
+                    console.error("Update error:", error);
+                    alert("Could not update report: " + error.code);
+                }
+            });
+
+            // Delete report
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+
+            deleteButton.addEventListener("click", async function() {
+
+                if (!confirm("Are you sure you want to delete this report?")) {
+                    return;
+                }
+
+                try {
+
+                    const collectionName =
+                        item.type === "Lost" ? "lost_items" : "found_items";
+
+                    const batch = writeBatch(db);
+
+                    batch.delete(doc(db, collectionName, item.id));
+                    batch.delete(doc(db, "private_contacts", item.id));
+
+                    await batch.commit();
+
+                    alert("Report deleted successfully!");
+
+                    await loadAdminReports();
+
+                } catch (error) {
+
+                    console.error("Delete error:", error);
+                    alert("Could not delete report: " + error.code);
+                }
+            });
+
+            actionCell.append(
+                statusSelect,
+                updateButton,
+                deleteButton
+            );
+
+            row.appendChild(actionCell);
+            table.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        console.error("Loading reports error:", error);
+
+        table.textContent =
+            "Failed to load reports: " + error.code;
+    }
+}
+
 
 // =================================
 // ADMIN LOGOUT
