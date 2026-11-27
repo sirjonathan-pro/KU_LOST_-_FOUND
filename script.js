@@ -242,16 +242,17 @@ async function loadAdminReports() {
                     await loadAdminReports();
 
 
-                    } catch (error) {
+                    } } catch (error) {
 
-    console.error("Update error:", error);
+    console.error("FULL UPDATE ERROR:", error);
 
     alert(
         "Update failed!\n" +
-        "Error: " + error.code +
-        "\nDetails: " + error.message
+        "Message: " + (error?.message || String(error)) +
+        "\nCode: " + (error?.code || "No error code")
     );
-            }
+        }
+            
             });
 
             // Delete report
