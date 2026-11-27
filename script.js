@@ -1,6 +1,16 @@
 
 console.log("KUJ Lost and Found system loaded");
-
+import {
+    doc,
+    getDoc,
+    collection,
+    addDoc,
+    getDocs,
+    writeBatch,
+    serverTimestamp,
+    updateDoc,
+    deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { auth, db } from "./firebase.js";
 
 import {
