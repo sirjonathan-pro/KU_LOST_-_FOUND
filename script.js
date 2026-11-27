@@ -451,21 +451,24 @@ submitItemReport({
 // SEARCH LOST AND FOUND ITEMS
 // =================================
 
-const searchInput = document.getElementById("searchInput");
-const searchResults = document.getElementById("searchResults");
+const searchForm = document.getElementById("searchForm");
 
-if (searchInput && searchResults) {
+if (searchForm) {
 
-    searchInput.addEventListener("input", async function() {
+    searchForm.addEventListener("submit", async function(event) {
 
-        const searchTerm = searchInput.value.trim().toLowerCase();
+        event.preventDefault();
 
-        searchResults.replaceChildren();
+        const searchTerm = document.getElementById("searchTerm")
+            .value.trim().toLowerCase();
 
-        if (!searchTerm) {
-            searchResults.textContent = "Enter an item name to search.";
-            return;
-        }
+        const searchCategory = document.getElementById("searchCategory")
+            .value;
+
+        const searchType = document.getElementById("searchType")
+            .value;
+
+        const searchResults = document.getElementById("searchResults");
 
         searchResults.textContent = "Searching...";
 
@@ -494,21 +497,29 @@ if (searchInput && searchResults) {
 
             const matches = reports.filter(function(item) {
 
-                const searchableText = [
-                    item.itemName,
-                    item.category,
-                    item.description,
-                    item.location,
-                    item.reportType
-                ].join(" ").toLowerCase();
+                const nameMatch =
+                    !searchTerm ||
+                    item.itemName.toLowerCase().includes(searchTerm);
 
-                return searchableText.includes(searchTerm);
+                const categoryMatch =
+                    !searchCategory ||
+                    item.category === searchCategory;
+
+                const typeMatch =
+                    !searchType ||
+                    item.reportType === searchType;
+
+                return nameMatch && categoryMatch && typeMatch;
             });
 
             searchResults.replaceChildren();
 
+            const heading = document.createElement("h3");
+            heading.textContent = "Search Results";
+            searchResults.appendChild(heading);
+
             if (matches.length === 0) {
-                searchResults.textContent = "No matching items found.";
+                searchResults.append("No matching items found.");
                 return;
             }
 
@@ -517,32 +528,21 @@ if (searchInput && searchResults) {
                 const card = document.createElement("div");
                 card.className = "search-result";
 
-                const heading = document.createElement("h3");
-                heading.textContent = item.itemName;
+                const details = [
+                    ["Item Name", item.itemName],
+                    ["Report Type", item.reportType],
+                    ["Category", item.category],
+                    ["Description", item.description],
+                    ["Location", item.location],
+                    ["Status", item.status]
+                ];
 
-                const type = document.createElement("p");
-                type.textContent = "Report type: " + item.reportType;
-
-                const category = document.createElement("p");
-                category.textContent = "Category: " + item.category;
-
-                const description = document.createElement("p");
-                description.textContent = "Description: " + item.description;
-
-                const location = document.createElement("p");
-                location.textContent = "Location: " + item.location;
-
-                const status = document.createElement("p");
-                status.textContent = "Status: " + item.status;
-
-                card.append(
-                    heading,
-                    type,
-                    category,
-                    description,
-                    location,
-                    status
-                );
+                details.forEach(function(detail) {
+                    const paragraph = document.createElement("p");
+                    paragraph.textContent =
+                        detail[0] + ": " + (detail[1] || "Not provided");
+                    card.appendChild(paragraph);
+                });
 
                 searchResults.appendChild(card);
             });
@@ -550,8 +550,12 @@ if (searchInput && searchResults) {
         } catch (error) {
 
             console.error("Search error:", error);
+
             searchResults.textContent =
-                "Search failed. Please try again.";
+                "Search failed: " + (error.code || error.message);
         }
     });
 }
+
+
+                
