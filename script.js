@@ -221,14 +221,15 @@ contactsSnapshot.forEach(function(contact) {
                 item.dateLost || item.dateFound || "Not provided";
 
             const values = [
-                item.itemName,
-                item.category,
-                item.type,
-                date,
-                item.status
-            ];
-
-            values.forEach(function(value) {
+    item.itemName,
+    item.category,
+    item.type,
+    date,
+    contacts[item.id] || "Not provided",
+    item.status
+];
+                
+             values.forEach(function(value) {
 
                 const cell = document.createElement("td");
 
