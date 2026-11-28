@@ -21,6 +21,114 @@ import {
 
 
 // =================================
+// CLOUDINARY CONFIGURATION
+// =================================
+
+const CLOUDINARY_NAME = "Sir-Jonathan";
+const UPLOAD_PRESET = "KUJ LOST AND FOUND";
+
+
+// =================================
+// CLOUDINARY IMAGE UPLOAD
+// =================================
+
+async function uploadPhoto(file) {
+
+    if (!file) return "";
+
+    if (!file.type.startsWith("image/")) {
+        throw new Error("Please select an image.");
+    }
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/jpg"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+        throw new Error("Only JPG, PNG,JPEG and WEBP images are allowed.");
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error("Image must not exceed 5 MB.");
+    }
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_NAME}/image/upload`,
+        {
+            method: "POST",
+            body: formData
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        console.error("Cloudinary error:", data);
+        throw new Error(
+            data.error?.message || "Photograph upload failed."
+        );
+    }
+
+    return data.secure_url;
+}
+
+
+// =================================
+// IMAGE PREVIEW
+// =================================
+
+function setupPhotoPreview(inputId, previewId) {
+
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+
+    if (!input || !preview) return;
+
+    input.addEventListener("change", function() {
+
+        preview.replaceChildren();
+
+        const file = input.files[0];
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Please select an image.");
+            input.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Image must not exceed 5 MB.");
+            input.value = "";
+            return;
+        }
+
+        const image = document.createElement("img");
+
+        image.src = URL.createObjectURL(file);
+        image.alt = "Selected item photograph";
+        image.style.maxWidth = "200px";
+        image.style.maxHeight = "200px";
+        image.style.marginTop = "10px";
+
+        preview.appendChild(image);
+    });
+}
+
+setupPhotoPreview("itemPhoto", "photoPreview");
+setupPhotoPreview("foundItemPhoto", "foundPhotoPreview");
+
+
+// =================================
 // ADMIN AUTHORIZATION
 // =================================
 
@@ -67,7 +175,6 @@ if (loginForm) {
             } else {
 
                 await signOut(auth);
-
                 result.textContent =
                     "Access denied. Not an administrator.";
             }
@@ -75,9 +182,7 @@ if (loginForm) {
         } catch (error) {
 
             console.error("Login error:", error);
-
-            result.textContent =
-                "Login failed: " + (error.message || "Check your details.");
+            result.textContent = "Login failed: " + error.message;
         }
     });
 }
@@ -94,7 +199,6 @@ if (adminMessage) {
     onAuthStateChanged(auth, async function(user) {
 
         if (!user) {
-
             window.location.href = "login.html";
             return;
         }
@@ -104,7 +208,6 @@ if (adminMessage) {
             const authorized = await checkAdmin(user);
 
             if (!authorized) {
-
                 await signOut(auth);
                 window.location.href = "login.html";
                 return;
@@ -118,7 +221,6 @@ if (adminMessage) {
         } catch (error) {
 
             console.error("Dashboard error:", error);
-
             adminMessage.textContent =
                 "Unable to load dashboard: " + error.message;
         }
@@ -141,43 +243,36 @@ async function loadAdminReports() {
     try {
 
         const [lostSnapshot, foundSnapshot, contactsSnapshot] =
-    await Promise.all([
-        getDocs(collection(db, "lost_items")),
-        getDocs(collection(db, "found_items")),
-        getDocs(collection(db, "private_contacts"))
-    ]);
+            await Promise.all([
+                getDocs(collection(db, "lost_items")),
+                getDocs(collection(db, "found_items")),
+                getDocs(collection(db, "private_contacts"))
+            ]);
 
-const contacts = {};
+        const contacts = {};
 
-contactsSnapshot.forEach(function(contact) {
-    contacts[contact.id] =
-        contact.data().email || "Not provided";
-});
+        contactsSnapshot.forEach(function(contact) {
+            contacts[contact.id] =
+                contact.data().email || "Not provided";
+        });
 
         const reports = [];
 
         lostSnapshot.forEach(function(item) {
-
             reports.push({
                 id: item.id,
                 ...item.data(),
                 type: "Lost"
             });
-
         });
 
         foundSnapshot.forEach(function(item) {
-
             reports.push({
                 id: item.id,
                 ...item.data(),
                 type: "Found"
             });
-
         });
-
-
-        // Dashboard statistics
 
         document.getElementById("totalReports").textContent =
             reports.length;
@@ -193,7 +288,6 @@ contactsSnapshot.forEach(function(contact) {
                 ["Claimed", "Returned", "Recovered"].includes(item.status)
             ).length;
 
-
         table.replaceChildren();
 
         if (reports.length === 0) {
@@ -201,7 +295,7 @@ contactsSnapshot.forEach(function(contact) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
 
-            cell.colSpan = 6;
+            cell.colSpan = 8;
             cell.textContent = "No reports available yet.";
 
             row.appendChild(cell);
@@ -209,9 +303,6 @@ contactsSnapshot.forEach(function(contact) {
 
             return;
         }
-
-
-        // Display each report
 
         reports.forEach(function(item) {
 
@@ -221,29 +312,46 @@ contactsSnapshot.forEach(function(contact) {
                 item.dateLost || item.dateFound || "Not provided";
 
             const values = [
-    item.itemName,
-    item.category,
-    item.type,
-    date,
-    contacts[item.id] || "Not provided",
-    item.status
-];
-                
-             values.forEach(function(value) {
+                item.itemName,
+                item.category,
+                item.type,
+                date,
+                contacts[item.id] || "Not provided",
+                item.status
+            ];
+
+            values.forEach(function(value) {
 
                 const cell = document.createElement("td");
-
                 cell.textContent = value || "Not provided";
-
                 row.appendChild(cell);
-
             });
 
+            // Photograph column
+
+            const photoCell = document.createElement("td");
+
+            if (item.photoURL) {
+
+                const image = document.createElement("img");
+
+                image.src = item.photoURL;
+                image.alt = "Item photograph";
+                image.style.width = "80px";
+                image.style.height = "80px";
+                image.style.objectFit = "cover";
+
+                photoCell.appendChild(image);
+
+            } else {
+                photoCell.textContent = "No photograph";
+            }
+
+            row.appendChild(photoCell);
 
             // STATUS DROPDOWN
 
             const actionCell = document.createElement("td");
-
             const statusSelect = document.createElement("select");
 
             [
@@ -264,9 +372,7 @@ contactsSnapshot.forEach(function(contact) {
                 }
 
                 statusSelect.appendChild(option);
-
             });
-
 
             // UPDATE BUTTON
 
@@ -282,15 +388,11 @@ contactsSnapshot.forEach(function(contact) {
                 try {
 
                     const collectionName =
-                        item.type === "Lost"
-                        ? "lost_items"
-                        : "found_items";
+                        item.type === "Lost" ? "lost_items" : "found_items";
 
                     await updateDoc(
                         doc(db, collectionName, item.id),
-                        {
-                            status: statusSelect.value
-                        }
+                        { status: statusSelect.value }
                     );
 
                     alert("Report status updated successfully!");
@@ -300,18 +402,10 @@ contactsSnapshot.forEach(function(contact) {
                 } catch (error) {
 
                     console.error("Update error:", error);
-
-                    alert(
-                        "Update failed!\n" +
-                        "Code: " + (error.code || "Unknown") +
-                        "\nMessage: " + error.message
-                    );
-
+                    alert("Update failed: " + error.message);
                     updateButton.disabled = false;
                 }
-
             });
-
 
             // DELETE BUTTON
 
@@ -331,19 +425,12 @@ contactsSnapshot.forEach(function(contact) {
                 try {
 
                     const collectionName =
-                        item.type === "Lost"
-                        ? "lost_items"
-                        : "found_items";
+                        item.type === "Lost" ? "lost_items" : "found_items";
 
                     const batch = writeBatch(db);
 
-                    batch.delete(
-                        doc(db, collectionName, item.id)
-                    );
-
-                    batch.delete(
-                        doc(db, "private_contacts", item.id)
-                    );
+                    batch.delete(doc(db, collectionName, item.id));
+                    batch.delete(doc(db, "private_contacts", item.id));
 
                     await batch.commit();
 
@@ -354,17 +441,10 @@ contactsSnapshot.forEach(function(contact) {
                 } catch (error) {
 
                     console.error("Delete error:", error);
-
-                    alert(
-                        "Delete failed: " +
-                        (error.message || error.code)
-                    );
-
+                    alert("Delete failed: " + error.message);
                     deleteButton.disabled = false;
                 }
-
             });
-
 
             actionCell.append(
                 statusSelect,
@@ -373,9 +453,7 @@ contactsSnapshot.forEach(function(contact) {
             );
 
             row.appendChild(actionCell);
-
             table.appendChild(row);
-
         });
 
     } catch (error) {
@@ -383,8 +461,7 @@ contactsSnapshot.forEach(function(contact) {
         console.error("Loading reports error:", error);
 
         table.textContent =
-            "Failed to load reports: " +
-            (error.message || error.code);
+            "Failed to load reports: " + error.message;
     }
 }
 
@@ -402,13 +479,11 @@ if (logoutBtn) {
         try {
 
             await signOut(auth);
-
             window.location.href = "login.html";
 
         } catch (error) {
 
             console.error("Logout error:", error);
-
             alert("Logout failed. Please try again.");
         }
     });
@@ -416,7 +491,7 @@ if (logoutBtn) {
 
 
 // =================================
-// GENERAL ITEM REPORTING FUNCTION
+// GENERAL ITEM REPORTING
 // =================================
 
 async function submitItemReport(config) {
@@ -431,8 +506,7 @@ async function submitItemReport(config) {
 
         const result = document.getElementById(config.resultId);
 
-        const button =
-            form.querySelector('button[type="submit"]');
+        const button = form.querySelector('button[type="submit"]');
 
         const itemName =
             document.getElementById(config.nameId).value.trim();
@@ -452,18 +526,31 @@ async function submitItemReport(config) {
         const email =
             document.getElementById(config.emailId).value.trim();
 
+        const photoInput = document.getElementById(config.photoId);
+
+        const photoFile = photoInput?.files[0] || null;
+
         result.textContent = "Submitting report...";
 
         button.disabled = true;
 
         try {
 
+            let photoURL = "";
+
+            if (photoFile) {
+
+                result.textContent = "Uploading photograph...";
+
+                photoURL = await uploadPhoto(photoFile);
+            }
+
+            result.textContent = "Saving report...";
+
             const batch = writeBatch(db);
 
             const reportRef =
                 doc(collection(db, config.collectionName));
-
-            // Public report
 
             batch.set(reportRef, {
 
@@ -472,12 +559,11 @@ async function submitItemReport(config) {
                 description: description,
                 [config.dateField]: date,
                 location: location,
+                photoURL: photoURL,
                 status: config.status,
                 createdAt: serverTimestamp()
 
             });
-
-            // Private contact details
 
             const contactRef = doc(
                 db,
@@ -499,19 +585,23 @@ async function submitItemReport(config) {
 
             form.reset();
 
+            const preview = document.getElementById(config.previewId);
+
+            if (preview) {
+                preview.replaceChildren();
+            }
+
         } catch (error) {
 
             console.error("Reporting error:", error);
 
             result.textContent =
-                "Reporting failed: " +
-                (error.message || error.code);
+                "Reporting failed: " + error.message;
 
         } finally {
 
             button.disabled = false;
         }
-
     });
 }
 
@@ -532,6 +622,9 @@ submitItemReport({
     dateId: "dateLost",
     locationId: "location",
     emailId: "email",
+
+    photoId: "itemPhoto",
+    previewId: "photoPreview",
 
     dateField: "dateLost",
     collectionName: "lost_items",
@@ -559,6 +652,9 @@ submitItemReport({
     dateId: "dateFound",
     locationId: "foundLocation",
     emailId: "finderEmail",
+
+    photoId: "foundItemPhoto",
+    previewId: "foundPhotoPreview",
 
     dateField: "dateFound",
     collectionName: "found_items",
@@ -601,32 +697,25 @@ if (searchForm) {
 
             const [lostSnapshot, foundSnapshot] =
                 await Promise.all([
-
                     getDocs(collection(db, "lost_items")),
                     getDocs(collection(db, "found_items"))
-
                 ]);
 
             const reports = [];
 
             lostSnapshot.forEach(function(item) {
-
                 reports.push({
                     ...item.data(),
                     reportType: "Lost"
                 });
-
             });
 
             foundSnapshot.forEach(function(item) {
-
                 reports.push({
                     ...item.data(),
                     reportType: "Found"
                 });
-
             });
-
 
             const matches = reports.filter(function(item) {
 
@@ -645,26 +734,19 @@ if (searchForm) {
                     item.reportType === searchType;
 
                 return nameMatch && categoryMatch && typeMatch;
-
             });
-
 
             searchResults.replaceChildren();
 
             const heading = document.createElement("h3");
-
             heading.textContent = "Search Results";
 
             searchResults.appendChild(heading);
 
-
             if (matches.length === 0) {
-
                 searchResults.append("No matching items found.");
-
                 return;
             }
-
 
             matches.forEach(function(item) {
 
@@ -672,15 +754,25 @@ if (searchForm) {
 
                 card.className = "search-result";
 
-                const details = [
+                if (item.photoURL) {
 
+                    const image = document.createElement("img");
+
+                    image.src = item.photoURL;
+                    image.alt = "Photograph of " + item.itemName;
+                    image.style.maxWidth = "200px";
+                    image.style.maxHeight = "200px";
+
+                    card.appendChild(image);
+                }
+
+                const details = [
                     ["Item Name", item.itemName],
                     ["Report Type", item.reportType],
                     ["Category", item.category],
                     ["Description", item.description],
                     ["Location", item.location],
                     ["Status", item.status]
-
                 ];
 
                 details.forEach(function(detail) {
@@ -692,11 +784,9 @@ if (searchForm) {
                         (detail[1] || "Not provided");
 
                     card.appendChild(paragraph);
-
                 });
 
                 searchResults.appendChild(card);
-
             });
 
         } catch (error) {
@@ -704,9 +794,7 @@ if (searchForm) {
             console.error("Search error:", error);
 
             searchResults.textContent =
-                "Search failed: " +
-                (error.message || error.code);
+                "Search failed: " + error.message;
         }
-
     });
 }
